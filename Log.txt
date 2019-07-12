@@ -1,0 +1,39 @@
+ python3.7 cnpj.py "/home/socios-brasil/data/download" firebird "firebird+fdb://SYSDBA:P2sM7EpK@//home/dbbsdoc/db/Embases_CNPJ.fdb" --dir
+Iniciando processamento em 2019-06-28 18:25:12.685660
+Processando arquivo: /home/socios-brasil/data/download/DADOS_ABERTOS_CNPJ_01.zip
+Processando bloco 1: até linha 200000.
+INFORMACOES DO HEADER:
+Nome do arquivo: F.K032001K
+Data de gravacao: 20190514
+Numero da remessa: 00000001
+Processando arquivo: /home/socios-brasil/data/download/DADOS_ABERTOS_CNPJ_02.zip
+Processando arquivo: /home/socios-brasil/data/download/DADOS_ABERTOS_CNPJ_03.zip
+Processando arquivo: /home/socios-brasil/data/download/DADOS_ABERTOS_CNPJ_04.zip
+Processando arquivo: /home/socios-brasil/data/download/DADOS_ABERTOS_CNPJ_05.zip
+Processando arquivo: /home/socios-brasil/data/download/DADOS_ABERTOS_CNPJ_06.zip
+Processando arquivo: /home/socios-brasil/data/download/DADOS_ABERTOS_CNPJ_07.zip
+Processando arquivo: /home/socios-brasil/data/download/DADOS_ABERTOS_CNPJ_08.zip
+Processando arquivo: /home/socios-brasil/data/download/DADOS_ABERTOS_CNPJ_09.zip
+Processando arquivo: /home/socios-brasil/data/download/DADOS_ABERTOS_CNPJ_10.zip
+Processando arquivo: /home/socios-brasil/data/download/DADOS_ABERTOS_CNPJ_11.zip
+Processando arquivo: /home/socios-brasil/data/download/DADOS_ABERTOS_CNPJ_12.zip
+Processando arquivo: /home/socios-brasil/data/download/DADOS_ABERTOS_CNPJ_13.zip
+Processando arquivo: /home/socios-brasil/data/download/DADOS_ABERTOS_CNPJ_14.zip
+Processando arquivo: /home/socios-brasil/data/download/DADOS_ABERTOS_CNPJ_15.zip
+Processando arquivo: /home/socios-brasil/data/download/DADOS_ABERTOS_CNPJ_16.zip
+Processando arquivo: /home/socios-brasil/data/download/DADOS_ABERTOS_CNPJ_17.zip
+Processando arquivo: /home/socios-brasil/data/download/DADOS_ABERTOS_CNPJ_18.zip
+Processando arquivo: /home/socios-brasil/data/download/DADOS_ABERTOS_CNPJ_19.zip
+Processando arquivo: /home/socios-brasil/data/download/DADOS_ABERTOS_CNPJ_20.zip
+Processando bloco 21: até linha 4200000.
+INFORMACOES DE CONTROLE:
+Total de registros de empresas: 40754938
+Total de registros de socios: 25873191
+Total de registros de CNAEs secundarios: 16445774
+Total de registros incluindo header e trailler: 83073905
+
+Conversao concluida. Validando quantidades:
+Total de registros de empresas: 40754938 ok
+Total de registros de socios: 25873191 ok
+Total de registros de CNAEs: 16445774 ok
+Processamento concluido em 2019-06-29 05:14:28.392998

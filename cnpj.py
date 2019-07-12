@@ -4,7 +4,7 @@ import glob
 import sys
 import csv
 import datetime
-
+import sqlalchemy
 import pandas as pd
 
 from cfwf import read_cfwf
@@ -183,13 +183,80 @@ def cnpj_full(input_list, tipo_output, output_path):
     controle_socios = 0
     total_cnaes = 0
     controle_cnaes = 0
-
-    if not os.path.exists(output_path):
-        os.makedirs(output_path)
+    
+    if tipo_output in ['csv','sqlite']:
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
 
     if tipo_output == 'sqlite':
         import sqlite3
+        #from sqlalchemy.dialects.sqlite import dialect
         conBD = sqlite3.connect(os.path.join(output_path,NOME_ARQUIVO_SQLITE))
+
+    if tipo_output == 'firebird':
+        from sqlalchemy import create_engine
+        #engine = create_engine('firebird+fdb://SYSDBA:masterkey@192.168.0.5/'+NOME_ARQUIVO_FIREBIRD)
+        engine = create_engine(output_path)
+        conBD = engine.connect()
+
+    EMPRESAS_COLUNAS_DT = dict([
+        ('cnpj',sqlalchemy.types.CHAR(length=14)),
+        ('matriz_filial',sqlalchemy.types.CHAR(length=1)),
+        ('razao_social',sqlalchemy.types.VARCHAR(length=160)),
+        ('nome_fantasia',sqlalchemy.types.VARCHAR(length=80)),
+        ('situacao',sqlalchemy.types.CHAR(length=2)),
+        ('data_situacao',sqlalchemy.types.CHAR(length=8)),
+        ('motivo_situacao',sqlalchemy.types.CHAR(length=2)),
+        ('nm_cidade_exterior',sqlalchemy.types.VARCHAR(length=80)),
+        ('cod_pais',sqlalchemy.types.CHAR(length=3)),
+        ('nome_pais',sqlalchemy.types.VARCHAR(length=80)),
+        ('cod_nat_juridica',sqlalchemy.types.CHAR(length=4)),
+        ('data_inicio_ativ',sqlalchemy.types.CHAR(length=8)),
+        ('cnae_fiscal',sqlalchemy.types.CHAR(length=7)),
+        ('tipo_logradouro',sqlalchemy.types.VARCHAR(length=25)),
+        ('logradouro',sqlalchemy.types.VARCHAR(length=80)),
+        ('numero',sqlalchemy.types.VARCHAR(length=8)),
+        ('complemento',sqlalchemy.types.VARCHAR(length=160)),
+        ('bairro',sqlalchemy.types.VARCHAR(length=60)),
+        ('cep',sqlalchemy.types.CHAR(length=8)),
+        ('uf',sqlalchemy.types.CHAR(length=2)),
+        ('cod_municipio',sqlalchemy.types.CHAR(length=4)),
+        ('municipio',sqlalchemy.types.VARCHAR(length=80)),
+        ('ddd_1',sqlalchemy.types.VARCHAR(length=6)),
+        ('telefone_1',sqlalchemy.types.VARCHAR(length=10)),
+        ('ddd_2',sqlalchemy.types.VARCHAR(length=6)),
+        ('telefone_2',sqlalchemy.types.VARCHAR(length=10)),
+        ('ddd_fax',sqlalchemy.types.VARCHAR(length=6)),
+        ('num_fax',sqlalchemy.types.VARCHAR(length=10)),
+        ('email',sqlalchemy.types.VARCHAR(length=120)),
+        ('qualif_resp',sqlalchemy.types.CHAR(length=2)),
+        ('capital_social',sqlalchemy.types.NUMERIC(precision=18, scale=2)),
+        ('porte',sqlalchemy.types.CHAR(length=2)),
+        ('opc_simples',sqlalchemy.types.CHAR(length=1)),
+        ('data_opc_simples',sqlalchemy.types.CHAR(length=8)),
+        ('data_exc_simples',sqlalchemy.types.CHAR(length=8)),
+        ('opc_mei',sqlalchemy.types.CHAR(length=1)),
+        ('sit_especial',sqlalchemy.types.VARCHAR(length=40)),
+        ('data_sit_especial',sqlalchemy.types.CHAR(length=8))])
+
+    SOCIOS_COLUNAS_DT = dict([
+        ('cnpj',sqlalchemy.types.CHAR(length=14)),
+        ('tipo_socio',sqlalchemy.types.CHAR(length=1)),
+        ('nome_socio',sqlalchemy.types.VARCHAR(length=160)),
+        ('cnpj_cpf_socio',sqlalchemy.types.CHAR(length=14)),
+        ('cod_qualificacao',sqlalchemy.types.CHAR(length=2)),
+        ('perc_capital',sqlalchemy.types.FLOAT()),
+        ('data_entrada',sqlalchemy.types.CHAR(length=8)),
+        ('cod_pais_ext',sqlalchemy.types.CHAR(length=3)),
+        ('nome_pais_ext',sqlalchemy.types.VARCHAR(length=80)),
+        ('cpf_repres',sqlalchemy.types.CHAR(length=11)),
+        ('nome_repres',sqlalchemy.types.VARCHAR(length=80)),
+        ('cod_qualif_repres',sqlalchemy.types.CHAR(length=2))])
+    
+    CNAES_COLUNAS_DT = dict([
+        ('cnpj',sqlalchemy.types.CHAR(length=14)),
+        ('cnae_ordem',sqlalchemy.types.INTEGER()),
+        ('cnae',sqlalchemy.types.CHAR(length=7))])
 
     # Itera sobre sequencia de arquivos (p/ suportar arquivo dividido pela RF)
     for i_arq, arquivo in enumerate(input_list):
@@ -225,15 +292,15 @@ def cnpj_full(input_list, tipo_output, output_path):
 
                     # Troca datas zeradas por vazio
                     df['data_opc_simples'] = (df['data_opc_simples']
-                            .where(df['data_opc_simples'] != '00000000',''))
+                            .where(df['data_opc_simples'] != '0000-00-00',''))
                     df['data_exc_simples'] = (df['data_exc_simples']
-                            .where(df['data_exc_simples'] != '00000000',''))
+                            .where(df['data_exc_simples'] != '0000-00-00',''))
                     df['data_sit_especial'] = (df['data_sit_especial']
-                            .where(df['data_sit_especial'] != '00000000',''))
+                            .where(df['data_sit_especial'] != '0000-00-00',''))
 
                 elif tipo_registro == '2': # socios
                     total_socios += len(df)
-
+                    
                     # Troca cpf invalido por vazio
                     df['cpf_repres'] = (df['cpf_repres']
                             .where(df['cpf_repres'] != '***000000**',''))
@@ -303,16 +370,35 @@ def cnpj_full(input_list, tipo_output, output_path):
                               index=False,
                               quoting=csv.QUOTE_NONNUMERIC)
 
-                elif tipo_output == 'sqlite':
+                elif tipo_output in ['sqlite','firebird']:
                     replace_append = 'append' if (i_arq + i_bloco) > 0 else 'replace' 
-                        
-                    df.to_sql(REGISTROS_TIPOS[tipo_registro], 
-                              con=conBD, 
-                              if_exists=replace_append, 
-                              index=False)
+
+                    if tipo_registro == '1':
+                        df.to_sql(REGISTROS_TIPOS[tipo_registro], 
+                                  con=conBD, 
+                                  if_exists=replace_append, 
+                                  index=False,
+                                  dtype=EMPRESAS_COLUNAS_DT)
+                    elif tipo_registro == '2':
+                        df.to_sql(REGISTROS_TIPOS[tipo_registro], 
+                                  con=conBD, 
+                                  if_exists=replace_append, 
+                                  index=False,
+                                  dtype=SOCIOS_COLUNAS_DT)
+                    elif tipo_registro == '6':
+                        df.to_sql(REGISTROS_TIPOS[tipo_registro], 
+                                  con=conBD, 
+                                  if_exists=replace_append, 
+                                  index=False,
+                                  dtype=CNAES_COLUNAS_DT)
+                    else:
+                        df.to_sql(REGISTROS_TIPOS[tipo_registro], 
+                                  con=conBD, 
+                                  if_exists=replace_append, 
+                                  index=False)
 
 
-    if tipo_output == 'sqlite':
+    if tipo_output in ['sqlite', 'firebird']:
         conBD.close()
 
     # Imprime totais
@@ -382,7 +468,7 @@ Essa operaçao pode levar vários minutos.
 
 def help():
     print('''
-Uso: python cnpj.py <path_input> <output:csv|sqlite> <path_output> [--dir] [--noindex]
+Uso: python cnpj.py <path_input> <output:csv|sqlite|firebird> <path_output> [--dir] [--noindex]
 Argumentos opcionais:
  [--dir]: Indica que o <path_input> e uma pasta e pode conter varios ZIPs.
  [--noindex]: NAO gera indices automaticamente no sqlite ao final da carga.
@@ -415,12 +501,14 @@ def main():
                 elif (opcional == '--dir'):
                     input_list = glob.glob(os.path.join(input_path,'*.zip'))
                     input_list.sort()
+                elif (opcional == '--createfdb'):
+                    criar_fdb = True
                 else:
                     print(u'Argumento opcional inválido.')
                     help()
                     break
 
-        if tipo_output not in ['csv','sqlite']:
+        if tipo_output not in ['csv','sqlite','firebird']:
             print('''
 Erro: tipo de output inválido. 
 Escolha um dos seguintes tipos de output: csv ou sqlite.
